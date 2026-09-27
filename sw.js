@@ -1,6 +1,6 @@
-// Keeps Puzzle Time working with no internet. Bump VERSION whenever index.html changes.
-const VERSION = 'puzzle-v1';
-const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+// Keeps Matthew's Games working with no internet. Bump VERSION whenever a game changes.
+const VERSION = 'games-v2';
+const FILES = ['./', 'index.html', 'puzzle.html', 'carwash.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
