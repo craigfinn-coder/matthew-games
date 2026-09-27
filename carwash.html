@@ -605,6 +605,14 @@ function buildMask(v){
   for (let y=10; y<VH; y+=20) for (let xx=10; xx<VW; xx+=20) if (d[(y*VW + xx)*4 + 3] > 120) cells.push({x:xx, y});
   S.cells = cells;
   S.maskA = alphaOf(m); let n = 0; for (let p=3; p<S.maskA.length; p+=4) if (S.maskA[p] >= 128) n++; S.maskN = n;
+  // solid interior 4x4 blocks only (every pixel fully opaque)
+  const core = [];
+  for (let by=0; by<VH; by+=4) for (let bx=0; bx<VW; bx+=4){
+    const px = []; let solid = true;
+    for (let yy=0; yy<4 && solid; yy++) for (let xx=0; xx<4; xx++){ const o = ((by+yy)*VW + bx+xx)*4 + 3; if (d[o] < 250){ solid = false; break; } px.push(o); }
+    if (solid) core.push({x:bx + 2, y:by + 2, px});
+  }
+  S.core = core; S.coreN = core.length;
 }
 function maskLayer(k){ const x = L[k].getContext('2d'); x.save(); x.globalCompositeOperation = 'destination-in'; x.drawImage(L.mask, 0, 0); x.restore(); }
 function muddy(){
@@ -634,19 +642,26 @@ const MW = 200, MH = 115, mcan = document.createElement('canvas'); mcan.width = 
 const mctx = mcan.getContext('2d', {willReadFrequently:true});
 function alphaOf(layer){ mctx.clearRect(0,0,MW,MH); mctx.drawImage(layer, 0, 0, MW, MH); return mctx.getImageData(0,0,MW,MH).data; }
 function measure(){
-  const st = S.stage, m = S.maskA; if (!m) return;
-  const a = alphaOf(st === 0 ? L.foam : st === 1 ? L.mud : st === 2 ? L.wet : L.dull), b = st === 1 ? alphaOf(L.foam) : null;
+  // Reads the real full-size pixels, 4x4 blocks at a time, and only counts solid interior blocks
+  // (outlines, mirrors and thin edges are ignored, so nothing can get stuck "dirty").
+  const st = S.stage; if (!S.core) return;
+  const get = c => c.getContext('2d').getImageData(0,0,VW,VH).data;
+  const A = get(st === 0 ? L.foam : st === 1 ? L.mud : st === 2 ? L.wet : L.dull), B = st === 1 ? get(L.foam) : null;
   let rem = 0; const pts = [];
-  for (let i=0, p=3; i<MW*MH; i++, p+=4){
-    if (m[p] < 128) continue;
-    const left = st === 0 ? a[p] < 110 : st === 1 ? (a[p] > 45 || b[p] > 45) : st === 2 ? a[p] > 45 : a[p] > 35;
-    if (left){ rem++; if (rem % 7 === 1) pts.push({x:(i % MW)*VW/MW + 2, y:Math.floor(i/MW)*VH/MH + 2}); }
+  for (const blk of S.core){
+    let a = 0, b = 0;
+    for (const o of blk.px){ a += A[o]; if (B) b += B[o]; }
+    a /= 16; b /= 16;
+    const left = st === 0 ? a < 170 : st === 1 ? (a > 50 || b > 50) : st === 2 ? a > 50 : a > 40;
+    if (left){ rem++; pts.push(blk); }
   }
-  if (S.rem0 == null) S.rem0 = Math.max(1, rem);
+  if (S.rem0 == null){ S.rem0 = Math.max(1, rem); S.best = rem; S.stall = 0; }
   S.prog = Math.max(0, 1 - rem/S.rem0);
-  const step = Math.max(1, Math.floor(pts.length/8)); S.left = pts.filter((_, k) => k % step === 0).slice(0, 10);
+  const step = Math.max(1, Math.floor(pts.length/9)); S.left = pts.filter((_, k) => k % step === 0).slice(0, 10).map(b => ({x:b.x, y:b.y}));
   const chip = document.querySelector('#steps .stepchip.now'); if (chip) chip.style.setProperty('--p', Math.round(S.prog*100) + '%');
-  if (rem <= Math.max(3, S.maskN*.006)) stageDone();   // genuinely clean (only a few tiny specks), then tidy those
+  if (rem < S.best){ S.best = rem; S.stall = 0; } else if (!S.down) S.stall += .2;
+  if (rem <= Math.max(2, S.coreN*.008)) return stageDone();                 // clean
+  if (rem <= S.coreN*.03 && S.stall >= 2.5) return stageDone();             // a few specks left and he's stopped: tidy them for him
 }
 function progress(i){ const g = S.got[i]; let n = 0; for (let k=0;k<g.length;k++) n += g[k]; return g.length ? n/g.length : 1; }
 function mark(i, lx, ly, r){ const g = S.got[i], r2 = (r + 10)*(r + 10); let hit = 0;
