@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Matthew's Games">
+<meta name="theme-color" content="#8AD8FF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Pairs Party</title>
+<style>
+:root{
+  --ground:#E4F1FB; --ink:#1B2B44; --soft:#5A6E8C; --panel:#FFFFFF; --line:#C7DAEC;
+  --face:#FFFFFF; --accent:#FF6B3D; --good:#2BB673;
+  --back-a:#E23B3B; --back-b:#FFC93C;
+  color-scheme:light;
+  font-family:"Baloo 2", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+}
+[hidden]{display:none!important}
+html,body{height:100%; margin:0}
+body{background:var(--ground); color:var(--ink); font-family:inherit; font-size:16px; padding:env(safe-area-inset-top,0px) calc(16px + env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) calc(16px + env(safe-area-inset-left,0px)); box-sizing:border-box; display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+*{box-sizing:border-box}
+button{font:inherit; color:inherit; cursor:pointer}
+button:focus-visible,label:focus-within{outline:3px solid var(--accent); outline-offset:2px}
+img{max-width:100%}
+
+header{display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding-block:10px 8px}
+h1{margin:0; font-size:1.6rem; font-weight:800; line-height:1; letter-spacing:-.01em; margin-right:auto}
+h1 span{color:var(--accent)}
+.themes{display:flex; gap:8px; flex-wrap:wrap}
+.theme{display:flex; align-items:center; gap:6px; border:2px solid var(--line); background:var(--panel); border-radius:999px; padding:4px 14px 2px 6px; font-weight:700; font-size:1rem}
+.theme .ic{font-size:1.5rem; line-height:1}
+.theme[aria-pressed="true"]{border-color:var(--accent); background:var(--accent); color:#fff}
+.tools{display:flex; gap:8px; flex-wrap:wrap; align-items:center; width:100%}
+.seg{display:flex; background:var(--panel); border:2px solid var(--line); border-radius:999px; padding:2px}
+.seg button{border:0; background:none; border-radius:999px; padding:2px 12px 0; font-weight:700; min-width:40px}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--ground)}
+.btn{border:2px solid var(--line); background:var(--panel); border-radius:999px; padding:4px 16px 2px; font-weight:700}
+a.btn{text-decoration:none; color:inherit; display:inline-block}
+.btn.go{background:var(--good); border-color:var(--good); color:#fff}
+.score{margin-left:auto; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums}
+.small{font-size:.85rem; color:var(--soft)}
+
+#board{flex:1; min-height:0; display:grid; justify-content:center; align-content:center; gap:var(--gap,8px); padding-block:6px 12px}
+.card{width:var(--cw); height:var(--ch); perspective:600px; border:0; padding:0; background:none}
+.inner{position:relative; width:100%; height:100%; transition:transform .45s cubic-bezier(.3,1.4,.5,1); transform-style:preserve-3d}
+.card.up .inner,.card.done .inner{transform:rotateY(180deg)}
+.side{position:absolute; inset:0; border-radius:14%; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:grid; place-items:center; overflow:hidden; box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.back{background:var(--back-a)}
+.front{background:var(--face); transform:rotateY(180deg); font-size:calc(var(--cw) * .62); line-height:1; border:3px solid var(--line)}
+.front img{width:100%; height:100%; object-fit:contain; background:#fff}
+.card.done .front{border-color:var(--good); animation:pop .5s ease}
+.card.done{opacity:.55; transition:opacity .6s .6s}
+.card.shake .inner{animation:shake .4s}
+@keyframes pop{50%{transform:rotateY(180deg) scale(1.15)}}
+@keyframes shake{0%,100%{transform:rotateY(180deg)}25%{transform:rotateY(180deg) translateX(-5px)}75%{transform:rotateY(180deg) translateX(5px)}}
+
+/* card backs per theme */
+body[data-t="heroes"]{--bk:#E23B3B} body[data-t="toys"]{--bk:#2F7DE1} body[data-t="pups"]{--bk:#F26B2B} body[data-t="hoops"]{--bk:#0E8A4A} body[data-t="bugs"]{--bk:#D8262E}
+body[data-t="heroes"] .back{background:repeating-conic-gradient(from 0deg at 50% 50%, var(--bk) 0 15deg, #FFC93C 15deg 30deg)}
+body[data-t="heroes"] .back::after{content:"⚡"; font-size:calc(var(--cw)*.4); filter:drop-shadow(0 2px 0 #7a1010)}
+body[data-t="toys"] .back{background:radial-gradient(circle, #FFD23F 18%, transparent 20%) 0 0/28% 28%, var(--bk)}
+body[data-t="pups"] .back{background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.25) 12%, transparent 13%) 0 0/34% 34%, var(--bk)}
+body[data-t="pups"] .back::after{content:"🐾"; font-size:calc(var(--cw)*.38)}
+body[data-t="hoops"] .back{background:repeating-linear-gradient(180deg, var(--bk) 0 16%, #FFFFFF 16% 32%)}
+body[data-t="hoops"] .back::after{content:"⚽"; font-size:calc(var(--cw)*.36); background:#fff; border-radius:50%; padding:4%}
+body[data-t="bugs"] .back{background:repeating-radial-gradient(circle at 50% 50%, transparent 0 10%, rgba(0,0,0,.55) 10% 11.5%), repeating-conic-gradient(from 0deg, transparent 0 21deg, rgba(0,0,0,.55) 21deg 23deg), var(--bk)}
+body[data-t="bugs"] .back::after{content:"🕷️"; font-size:calc(var(--cw)*.36)}
+
+/* photo panel */
+dialog{border:0; border-radius:20px; background:var(--panel); color:var(--ink); max-width:min(560px, calc(100vw - 32px)); width:100%; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,40,.55)}
+dialog h2{margin:0 0 4px; font-size:1.4rem}
+dialog p{margin:0 0 12px; color:var(--soft); line-height:1.4}
+.thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(56px,1fr)); gap:6px; max-height:40vh; overflow:auto; margin-block:10px}
+.thumbs div{position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:var(--ground)}
+.thumbs img{width:100%; height:100%; object-fit:contain; background:#fff}
+.thumbs button{position:absolute; top:2px; right:2px; border:0; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; width:22px; height:22px; font-size:14px; line-height:22px; padding:0}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.upload{position:relative; overflow:hidden}
+.upload input{position:absolute; inset:0; opacity:0; cursor:pointer}
+.toggle{display:flex; align-items:center; gap:8px; font-weight:700}
+.toggle input{width:22px; height:22px; accent-color:var(--good)}
+
+.backprev{width:40px; height:48px; border-radius:8px; overflow:hidden}
+body.cb .back::after{content:"" !important; position:absolute; inset:8%; background:var(--cb) center/contain no-repeat !important; padding:0 !important; border-radius:0 !important; filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+/* win */
+#win{position:fixed; inset:0; display:grid; place-items:center; background:rgba(10,20,40,.45); z-index:5}
+#win .box{background:var(--panel); border-radius:28px; padding:28px 32px; text-align:center; max-width:calc(100vw - 32px); animation:pop2 .6s cubic-bezier(.3,1.6,.5,1)}
+#win .big{font-size:4.5rem; line-height:1}
+#win h2{margin:6px 0 4px; font-size:2rem}
+#win p{margin:0 0 16px; color:var(--soft)}
+#win .btn{font-size:1.4rem; padding:8px 28px 6px}
+@keyframes pop2{from{transform:scale(.4)}}
+#confetti{position:fixed; inset:0; pointer-events:none; z-index:6}
+@media (prefers-reduced-motion:reduce){.inner{transition:none}.card.done .front,.card.shake .inner,#win .box{animation:none}}
+@media (max-width:560px){h1{font-size:1.3rem}.theme{padding:2px 10px 0 4px;font-size:.9rem}.theme .lbl{display:none}.theme{padding:4px 8px}}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="btn" href="index.html" id="home" aria-label="Back to all games">← Games</a>
+  <h1>Pairs <span>Party</span></h1>
+  <div class="themes" id="themes" role="group" aria-label="Choose a theme"></div>
+  <div class="tools">
+    <div class="seg" id="sizes" role="group" aria-label="Number of pairs"></div>
+    <button class="btn go" id="newGame">New game</button>
+    <button class="btn" id="photosBtn">📷 My pictures</button>
+    <button class="btn" id="soundBtn" aria-pressed="true">🔊</button>
+    <span class="score" id="score"></span>
+  </div>
+</header>
+<main id="board" aria-label="Cards"></main>
+
+<dialog id="photos">
+  <h2 id="photosTitle">My pictures</h2>
+  <p>Add your own photos to this theme, like pictures of favourite toys or characters. Each photo becomes one pair. Up to 30 per theme; any gaps are filled with the built-in pictures. Photos stay on this device only.</p>
+  <p><strong>On the iPad:</strong> tap <strong>Add photos</strong> and pick pictures from the Photos app. On a Mac you can also copy a picture, click here and press <strong>Cmd+V</strong>, or drag pictures onto this box.</p>
+  <label class="toggle" style="margin-bottom:10px">Theme name <input type="text" id="themeName" maxlength="24" style="font:inherit;flex:1;border:2px solid var(--line);border-radius:10px;padding:2px 10px;background:var(--ground);color:var(--ink);width:auto;height:auto"></label>
+  <div class="row" style="margin-bottom:10px">
+    <strong>Card back:</strong>
+    <div id="backPrev" class="backprev"></div>
+    <label class="toggle" title="Card colour">Colour <input type="color" id="backColor" style="width:44px;height:34px;padding:0;border:0;background:none"></label>
+    <span class="btn upload">Add logo<input type="file" id="backIn" accept="image/*"></span>
+    <button class="btn" id="backClear">Reset</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="usePhotos"> Use my pictures in this theme</label>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="row">
+    <span class="btn upload go">Add photos<input type="file" id="fileIn" accept="image/*" multiple></span>
+    <button class="btn" id="clearPhotos">Remove all</button>
+    <span class="small" id="photoCount"></span>
+    <button class="btn" id="closePhotos" style="margin-left:auto">Done</button>
+  </div>
+</dialog>
+
+<div id="win" hidden><div class="box"><div class="big">🎉</div><h2>You found them all!</h2><p id="winText"></p><button class="btn go" id="again">Play again</button></div></div>
+<canvas id="confetti"></canvas>
+
+<script>
+const THEMES = {
+  heroes:{name:"Superheroes", icon:"🦸", items:"🦸 🦸‍♀️ 🦹 ⚡ 💥 🛡️ 🚀 🤖 🦖 🦕 🐉 🦅 🐺 🦁 🐯 🐻 🦈 🔥 ⭐ 🪐 🌈 💎 👊 🥋 🏆 🌋 🌙 ☄️ 🎖️ 🏍️"},
+  toys:{name:"Toy Box", icon:"🧸", items:"🧸 🪀 🪁 🚂 🚗 🚒 🚓 ✈️ 🚁 🎈 🧩 🎲 🪅 🪆 🥁 🎺 🎸 🦖 🛴 🚀 🛸 🐴 🎨 🖍️ 🏀 🪄 🎁 🛝 🚜 🦆"},
+  pups:{name:"Puppy Rescue", icon:"🐶", items:"🐶 🐕 🐑 🐮 🐩 🦴 🚒 🚓 🚑 🚁 🚤 ⛑️ 🚧 🧯 🏗️ 🚜 ♻️ 🏔️ 🌊 🐾 🐱 🐔 🐢 🐙 🐧 🏠 🔦 🧭 🎒 ⚓"},
+  hoops:{name:"Green & White", icon:"⚽", items:"⚽ 🥅 🏆 🥇 👟 🧤 🍀 🥤 🏟️ 📣 🥁 🎉 🧣 👕 ⭐ 🦁 🎺 ⏱️ 🟨 🟥 🚩 🎟️ 🚌 🌭 🥧 ☕ 📸 🙌 🏃 🎈"},
+  bugs:{name:"Spiders & Bugs", icon:"🕷️", items:"🕷️ 🕸️ 🐞 🐝 🦋 🐛 🐜 🦗 🐌 🦂 🪲 🐸 🦎 🐍 🦔 🐿️ 🦉 🦇 🐦 🌻 🍄 🌳 🍂 🌸 🌵 🐢 🐰 🌙 ☀️ 🌧️"}
+};
+for (const k in THEMES) THEMES[k].items = THEMES[k].items.split(" ");
+const SIZES = [6,10,15,20,30];
+
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem("pp_"+k); return v==null?d:JSON.parse(v);}catch(e){return d} },
+  set(k,v){ try{ localStorage.setItem("pp_"+k, JSON.stringify(v)); }catch(e){} }
+};
+let theme = store.get("theme","heroes"); if(!THEMES[theme]) theme="heroes";
+let pairs = store.get("pairs",6); if(!SIZES.includes(pairs)) pairs=6;
+let sound = store.get("sound",true);
+let photos = {}; // theme -> [dataURL]
+let backs = {};
+let colors = store.get("colors",{});  // theme -> dataURL for card back
+let usePhotos = store.get("usePhotos",{});
+let names = store.get("names",{});
+const tName = k => names[k] || THEMES[k].name;
+
+/* ---------- IndexedDB for photos ---------- */
+let db=null;
+function openDB(){ return new Promise(res=>{ try{ const r=indexedDB.open("pairsparty",1); r.onupgradeneeded=()=>r.result.createObjectStore("photos"); r.onsuccess=()=>{db=r.result;res()}; r.onerror=()=>res(); }catch(e){res()} }); }
+function loadPhotos(){ return new Promise(res=>{ if(!db) return res(); try{ const tx=db.transaction("photos"); const os=tx.objectStore("photos"); Object.keys(THEMES).forEach(k=>{ const g=os.get(k); g.onsuccess=()=>{ photos[k]=g.result||[] }; const b=os.get("back_"+k); b.onsuccess=()=>{ if(b.result) backs[k]=b.result }; }); tx.oncomplete=()=>res(); tx.onerror=()=>res(); }catch(e){res()} }); }
+function saveBack(k){ if(!db) return; try{ const os=db.transaction("photos","readwrite").objectStore("photos"); backs[k]?os.put(backs[k],"back_"+k):os.delete("back_"+k); }catch(e){} }
+function savePhotos(k){ if(!db) return; try{ db.transaction("photos","readwrite").objectStore("photos").put(photos[k]||[],k); }catch(e){} }
+
+/* ---------- sound ---------- */
+let ac=null;
+function tone(freqs, dur=.12, type="sine", gap=.09, vol=.18){
+  if(!sound) return;
+  try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume();
+    freqs.forEach((f,i)=>{ const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime+i*gap;
+      o.type=type; o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t+dur+.02); });
+  }catch(e){}
+}
+const sfx = { flip:()=>tone([660],.08,"triangle"), match:()=>tone([523,659,784,1047],.18,"triangle",.08), miss:()=>tone([330,262],.14,"sine",.1,.1), win:()=>tone([523,659,784,1047,784,1047,1319],.25,"triangle",.12,.2) };
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const board=$("board");
+function applyBack(){
+  const b=backs[theme];
+  document.body.classList.toggle("cb",!!b);
+  if(b) document.body.style.setProperty("--cb",`url("${b}")`); else document.body.style.removeProperty("--cb");
+  if(colors[theme]) document.body.style.setProperty("--bk",colors[theme]); else document.body.style.removeProperty("--bk");
+}
+function renderChrome(){
+  document.body.dataset.t=theme; applyBack();
+  $("themes").innerHTML = Object.entries(THEMES).map(([k,t])=>`<button class="theme" data-k="${k}" aria-pressed="${k===theme}" title="${tName(k)}"><span class="ic">${t.icon}</span><span class="lbl">${tName(k).replace(/</g,"&lt;")}</span></button>`).join("");
+  $("sizes").innerHTML = SIZES.map(n=>`<button data-n="${n}" aria-pressed="${n===pairs}" title="${n} pairs">${n}</button>`).join("");
+  $("soundBtn").textContent = sound?"🔊":"🔇"; $("soundBtn").setAttribute("aria-pressed",sound);
+}
+$("themes").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; theme=b.dataset.k; store.set("theme",theme); renderChrome(); newGame(); };
+$("sizes").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; pairs=+b.dataset.n; store.set("pairs",pairs); renderChrome(); newGame(); };
+$("newGame").onclick=()=>newGame();
+$("again").onclick=()=>newGame();
+$("soundBtn").onclick=()=>{ sound=!sound; store.set("sound",sound); renderChrome(); };
+
+/* ---------- game ---------- */
+let deck=[], first=null, lock=false, found=0, tries=0;
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function newGame(){
+  $("win").hidden=true; stopConfetti();
+  const t=THEMES[theme];
+  let pool=[];
+  const mine=(usePhotos[theme] && photos[theme]) ? shuffle(photos[theme].slice()).slice(0,pairs) : [];
+  mine.forEach((src,i)=>pool.push({id:"p"+i, img:src}));
+  shuffle(t.items.slice()).slice(0,pairs-pool.length).forEach(e=>pool.push({id:"e"+e, emoji:e}));
+  deck = shuffle(pool.flatMap(p=>[{...p},{...p}]));
+  first=null; lock=false; found=0; tries=0;
+  board.innerHTML = deck.map((c,i)=>`<button class="card" data-i="${i}" aria-label="Card ${i+1}"><div class="inner"><div class="side back"></div><div class="side front">${c.img?`<img src="${c.img}" alt="">`:c.emoji}</div></div></button>`).join("");
+  layout(); updateScore();
+}
+function updateScore(){ $("score").textContent = `${found} / ${deck.length/2} found`; }
+board.onclick=e=>{
+  const el=e.target.closest(".card"); if(!el||lock) return;
+  const i=+el.dataset.i, c=deck[i];
+  if(el.classList.contains("up")||el.classList.contains("done")) return;
+  el.classList.add("up"); sfx.flip();
+  if(first===null){ first=i; return; }
+  const a=first; first=null; tries++;
+  const elA=board.children[a];
+  if(deck[a].id===c.id){
+    setTimeout(()=>{ elA.classList.add("done"); el.classList.add("done"); elA.classList.remove("up"); el.classList.remove("up"); sfx.match(); found++; updateScore();
+      if(found===deck.length/2) setTimeout(win,700); },350);
+  } else {
+    lock=true;
+    setTimeout(()=>{ sfx.miss(); elA.classList.add("shake"); el.classList.add("shake"); },500);
+    setTimeout(()=>{ elA.classList.remove("up","shake"); el.classList.remove("up","shake"); lock=false; },1300);
+  }
+};
+function win(){ sfx.win(); $("winText").textContent=`All ${deck.length/2} pairs in ${tries} goes. Brilliant!`; $("win").hidden=false; confetti(); }
+
+/* fit cards to the screen */
+function layout(){
+  const n=deck.length; if(!n) return;
+  const W=board.clientWidth, H=board.clientHeight-18, gap = n>30?6:10;
+  let best={s:0,c:1};
+  for(let c=1;c<=n;c++){ const r=Math.ceil(n/c); const s=Math.min((W-gap*(c-1))/c, (H-gap*(r-1))/(r*1.2)); if(s>best.s) best={s,c}; }
+  const s=Math.max(28,Math.floor(best.s));
+  board.style.setProperty("--gap",gap+"px"); board.style.setProperty("--cw",s+"px"); board.style.setProperty("--ch",Math.floor(s*1.2)+"px");
+  board.style.gridTemplateColumns=`repeat(${best.c}, ${s}px)`;
+}
+addEventListener("resize",()=>layout());
+
+/* ---------- confetti ---------- */
+const cv=$("confetti"), cx=cv.getContext("2d"); let bits=[], raf=0;
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  cv.width=innerWidth; cv.height=innerHeight;
+  const cols=["#FF6B3D","#FFC93C","#2BB673","#2F7DE1","#E23B3B","#B45CE0"];
+  bits=Array.from({length:160},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*3,r:Math.random()*6.3,s:6+Math.random()*8,c:cols[Math.floor(Math.random()*cols.length)]}));
+  cancelAnimationFrame(raf); (function step(){ cx.clearRect(0,0,cv.width,cv.height); let alive=0;
+    bits.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; b.r+=.1; if(b.y<cv.height+20) alive++; cx.save(); cx.translate(b.x,b.y); cx.rotate(b.r); cx.fillStyle=b.c; cx.fillRect(-b.s/2,-b.s/4,b.s,b.s/2); cx.restore(); });
+    if(alive) raf=requestAnimationFrame(step); })();
+}
+function stopConfetti(){ cancelAnimationFrame(raf); cx.clearRect(0,0,cv.width,cv.height); }
+
+/* ---------- photo manager ---------- */
+const dlg=$("photos");
+function renderPhotos(){
+  const list=photos[theme]||[];
+  $("photosTitle").textContent=`My pictures: ${tName(theme)}`;
+  if(document.activeElement!==$("themeName")) $("themeName").value=names[theme]||"";
+  $("themeName").placeholder=THEMES[theme].name;
+  const bp=$("backPrev"); bp.className="backprev side back"; bp.style.position="relative"; bp.style.setProperty("--cw","40px");
+  $("backColor").value = colors[theme] || getComputedStyle(document.body).getPropertyValue("--bk").trim() || "#2F7DE1";
+  $("usePhotos").checked=!!usePhotos[theme];
+  $("photoCount").textContent=`${list.length} / 30`;
+  $("thumbs").innerHTML=list.map((s,i)=>`<div><img src="${s}" alt=""><button data-i="${i}" aria-label="Remove photo">×</button></div>`).join("");
+}
+$("photosBtn").onclick=()=>{ renderPhotos(); try{ dlg.showModal(); }catch(e){ dlg.setAttribute("open",""); } };
+$("closePhotos").onclick=()=>{ dlg.close?dlg.close():dlg.removeAttribute("open"); newGame(); };
+$("usePhotos").onchange=e=>{ usePhotos[theme]=e.target.checked; store.set("usePhotos",usePhotos); };
+$("thumbs").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; photos[theme].splice(+b.dataset.i,1); savePhotos(theme); renderPhotos(); };
+$("clearPhotos").onclick=()=>{ if($("clearPhotos").dataset.sure){ photos[theme]=[]; savePhotos(theme); delete $("clearPhotos").dataset.sure; $("clearPhotos").textContent="Remove all"; renderPhotos(); } else { $("clearPhotos").dataset.sure="1"; $("clearPhotos").textContent="Tap again to remove"; } };
+function shrink(file,logo){ return new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{ const W=400, H=480, P=12, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); if(!logo){ x.fillStyle="#fff"; x.fillRect(0,0,W,H); } const k=Math.min((W-2*P)/im.width,(H-2*P)/im.height), w=im.width*k, h=im.height*k; x.drawImage(im,(W-w)/2,(H-h)/2,w,h); res(logo?c.toDataURL("image/png"):c.toDataURL("image/jpeg",.82)); }; im.onerror=()=>res(null); im.src=fr.result; }; fr.onerror=()=>res(null); fr.readAsDataURL(file); }); }
+async function addFiles(files){
+  const list=photos[theme]=photos[theme]||[];
+  for(const f of files){ if(list.length>=30) break; if(!f.type.startsWith("image/")) continue; const d=await shrink(f); if(d) list.push(d); }
+  usePhotos[theme]=true; store.set("usePhotos",usePhotos); savePhotos(theme); renderPhotos();
+}
+$("backIn").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; const d=await shrink(f,true); if(d){ backs[theme]=d; saveBack(theme); applyBack(); renderPhotos(); } };
+$("backColor").oninput=e=>{ colors[theme]=e.target.value; store.set("colors",colors); applyBack(); };
+$("backClear").onclick=()=>{ delete backs[theme]; delete colors[theme]; store.set("colors",colors); saveBack(theme); applyBack(); renderPhotos(); };
+$("fileIn").onchange=async e=>{ await addFiles([...e.target.files]); e.target.value=""; };
+document.addEventListener("paste",e=>{ if(!dlg.open) return; const fs=[...(e.clipboardData?.items||[])].filter(i=>i.kind==="file").map(i=>i.getAsFile()).filter(Boolean); if(fs.length){ e.preventDefault(); addFiles(fs); } });
+dlg.addEventListener("dragover",e=>{ e.preventDefault(); });
+dlg.addEventListener("drop",e=>{ e.preventDefault(); addFiles([...(e.dataTransfer?.files||[])]); });
+$("themeName").oninput=e=>{ names[theme]=e.target.value.trim(); store.set("names",names); renderChrome(); $("photosTitle").textContent=`My pictures: ${tName(theme)}`; };
+
+/* ---------- boot ---------- */
+renderChrome();
+openDB().then(loadPhotos).then(()=>{ applyBack(); newGame(); });
+newGame();
+</script>
+
+</body>
+</html>
