@@ -142,11 +142,11 @@ body.cb .back::after{content:"" !important; position:absolute; inset:8%; backgro
 
 <script>
 const THEMES = {
-  heroes:{name:"Superheroes", icon:"🦸", items:"🦸 🦸‍♀️ 🦹 ⚡ 💥 🛡️ 🚀 🤖 🦖 🦕 🐉 🦅 🐺 🦁 🐯 🐻 🦈 🔥 ⭐ 🪐 🌈 💎 👊 🥋 🏆 🌋 🌙 ☄️ 🎖️ 🏍️"},
+  heroes:{name:"Superheroes", icon:"🦸", items:"🦸 🎯 🧲 ⚡ 💥 🛡️ 🚀 🤖 🦖 🏰 🐉 🦅 🐺 🦁 🐯 🐻 🦈 🔥 ⭐ 🪐 🌈 💎 👊 🥋 🏆 🌋 🌙 ☄️ 🎖️ 🏍️"},
   toys:{name:"Toy Box", icon:"🧸", items:"🧸 🪀 🪁 🚂 🚗 🚒 🚓 ✈️ 🚁 🎈 🧩 🎲 🪅 🪆 🥁 🎺 🎸 🦖 🛴 🚀 🛸 🐴 🎨 🖍️ 🏀 🪄 🎁 🛝 🚜 🦆"},
-  pups:{name:"Puppy Rescue", icon:"🐶", items:"🐶 🐕 🐑 🐮 🐩 🦴 🚒 🚓 🚑 🚁 🚤 ⛑️ 🚧 🧯 🏗️ 🚜 ♻️ 🏔️ 🌊 🐾 🐱 🐔 🐢 🐙 🐧 🏠 🔦 🧭 🎒 ⚓"},
+  pups:{name:"Puppy Rescue", icon:"🐶", items:"🐶 🐰 🐑 🐮 🦆 🦴 🚒 🚓 🚑 🚁 🚤 ⛑️ 🚧 🧯 🏗️ 🚜 ♻️ 🏔️ 🌊 🐾 🐱 🐔 🐢 🐙 🐧 🏠 🔦 🧭 🎒 ⚓"},
   hoops:{name:"Green & White", icon:"⚽", items:"⚽ 🥅 🏆 🥇 👟 🧤 🍀 🥤 🏟️ 📣 🥁 🎉 🧣 👕 ⭐ 🦁 🎺 ⏱️ 🟨 🟥 🚩 🎟️ 🚌 🌭 🥧 ☕ 📸 🙌 🏃 🎈"},
-  bugs:{name:"Spiders & Bugs", icon:"🕷️", items:"🕷️ 🕸️ 🐞 🐝 🦋 🐛 🐜 🦗 🐌 🦂 🪲 🐸 🦎 🐍 🦔 🐿️ 🦉 🦇 🐦 🌻 🍄 🌳 🍂 🌸 🌵 🐢 🐰 🌙 ☀️ 🌧️"}
+  bugs:{name:"Spiders & Bugs", icon:"🕷️", items:"🕷️ 🕸️ 🐞 🐝 🦋 🐛 🐜 🦗 🐌 🦂 🐟 🐸 🦎 🐍 🦔 🐿️ 🦉 🦇 🐦 🌻 🍄 🌳 🍂 🌸 🌵 🐢 🐰 🌙 ☀️ 🌧️"}
 };
 for (const k in THEMES) THEMES[k].items = THEMES[k].items.split(" ");
 const SIZES = [6,10,15,20,30];
@@ -212,7 +212,7 @@ function newGame(){
   $("win").hidden=true; stopConfetti();
   const t=THEMES[theme];
   let pool=[];
-  const mine=(usePhotos[theme] && photos[theme]) ? shuffle(photos[theme].slice()).slice(0,pairs) : [];
+  const mine=(usePhotos[theme] && photos[theme]) ? shuffle([...new Set(photos[theme])]).slice(0,pairs) : [];
   mine.forEach((src,i)=>pool.push({id:"p"+i, img:src}));
   shuffle(t.items.slice()).slice(0,pairs-pool.length).forEach(e=>pool.push({id:"e"+e, emoji:e}));
   deck = shuffle(pool.flatMap(p=>[{...p},{...p}]));
@@ -220,6 +220,7 @@ function newGame(){
   board.innerHTML = deck.map((c,i)=>`<button class="card" data-i="${i}" aria-label="Card ${i+1}"><div class="inner"><div class="side back"></div><div class="side front">${c.img?`<img src="${c.img}" alt="">`:c.emoji}</div></div></button>`).join("");
   layout(); updateScore();
 }
+function sameCard(x, y){ return x.img ? x.img === y.img : (!y.img && x.emoji === y.emoji); }
 function updateScore(){ $("score").textContent = `${found} / ${deck.length/2} found`; }
 board.onclick=e=>{
   const el=e.target.closest(".card"); if(!el||lock) return;
@@ -229,7 +230,7 @@ board.onclick=e=>{
   if(first===null){ first=i; return; }
   const a=first; first=null; tries++;
   const elA=board.children[a];
-  if(deck[a].id===c.id){
+  if(sameCard(deck[a], c)){
     setTimeout(()=>{ elA.classList.add("done"); el.classList.add("done"); elA.classList.remove("up"); el.classList.remove("up"); sfx.match(); found++; updateScore();
       if(found===deck.length/2) setTimeout(win,700); },350);
   } else {
@@ -286,7 +287,7 @@ $("clearPhotos").onclick=()=>{ if($("clearPhotos").dataset.sure){ photos[theme]=
 function shrink(file,logo){ return new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{ const W=400, H=480, P=12, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); if(!logo){ x.fillStyle="#fff"; x.fillRect(0,0,W,H); } const k=Math.min((W-2*P)/im.width,(H-2*P)/im.height), w=im.width*k, h=im.height*k; x.drawImage(im,(W-w)/2,(H-h)/2,w,h); res(logo?c.toDataURL("image/png"):c.toDataURL("image/jpeg",.82)); }; im.onerror=()=>res(null); im.src=fr.result; }; fr.onerror=()=>res(null); fr.readAsDataURL(file); }); }
 async function addFiles(files){
   const list=photos[theme]=photos[theme]||[];
-  for(const f of files){ if(list.length>=30) break; if(!f.type.startsWith("image/")) continue; const d=await shrink(f); if(d) list.push(d); }
+  for(const f of files){ if(list.length>=30) break; if(!f.type.startsWith("image/")) continue; const d=await shrink(f); if(d && !list.includes(d)) list.push(d); }
   usePhotos[theme]=true; store.set("usePhotos",usePhotos); savePhotos(theme); renderPhotos();
 }
 $("backIn").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; const d=await shrink(f,true); if(d){ backs[theme]=d; saveBack(theme); applyBack(); renderPhotos(); } };
